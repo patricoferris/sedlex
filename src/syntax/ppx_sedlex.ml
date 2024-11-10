@@ -306,7 +306,7 @@ let regexp_of_pattern env =
   let rec char_pair_op func name p tuple =
     (* Construct something like Sub(a,b) *)
     match tuple with
-      | Some { ppat_desc = Ppat_tuple [p0; p1] } -> begin
+      | Some { ppat_desc = Ppat_tuple ([_, p0; _, p1], _) } -> begin
           match func (aux p0) (aux p1) with
             | Some r -> r
             | None ->
@@ -321,8 +321,8 @@ let regexp_of_pattern env =
     (* interpret one pattern node *)
     match p.ppat_desc with
       | Ppat_or (p1, p2) -> Sedlex.alt (aux p1) (aux p2)
-      | Ppat_tuple (p :: pl) ->
-          List.fold_left (fun r p -> Sedlex.seq r (aux p)) (aux p) pl
+      | Ppat_tuple ((_, p) :: pl, Closed) ->
+          List.fold_left (fun r (_, p) -> Sedlex.seq r (aux p)) (aux p) pl
       | Ppat_construct ({ txt = Lident "Star" }, Some (_, p)) ->
           Sedlex.rep (aux p)
       | Ppat_construct ({ txt = Lident "Plus" }, Some (_, p)) ->
@@ -334,13 +334,13 @@ let regexp_of_pattern env =
                 {
                   ppat_desc =
                     Ppat_tuple
-                      [
-                        p0;
-                        {
+                      ([
+                        _, p0;
+                        _, {
                           ppat_desc =
                             Ppat_constant (i1 as i2) | Ppat_interval (i1, i2);
                         };
-                      ];
+                      ], _);
                 } ) ) -> begin
           match (i1, i2) with
             | Pconst_integer (i1, _), Pconst_integer (i2, _) ->
